@@ -61,6 +61,95 @@ import p5 from "p5";
 
 
 const sketch = (p) => {
+    // --- DANCING LEAF UI OVERLAY ---
+    if (typeof window !== 'undefined') {
+        window.addEventListener('DOMContentLoaded', () => {
+            const leafOverlay = document.getElementById('leaf-ui-overlay');
+            function updateLeafOverlay() {
+                if (!leafOverlay) return;
+                leafOverlay.innerHTML = '';
+                const canvas = document.querySelector('canvas');
+                if (!canvas) return;
+                const rect = canvas.getBoundingClientRect();
+                LEAFS.forEach((leaf, i) => {
+                    if (!leaf.dancing) return;
+                    // Project leaf position to page coordinates
+                    const x = rect.left + leaf.x;
+                    const y = rect.top + leaf.y + 30; // 30px below leaf
+                    const wrapper = document.createElement('div');
+                    wrapper.style.position = 'absolute';
+                    wrapper.style.left = `${x - 60}px`;
+                    wrapper.style.top = `${y}px`;
+                    wrapper.style.pointerEvents = 'auto';
+                    wrapper.style.background = 'rgba(34,34,34,0.85)';
+                    wrapper.style.borderRadius = '8px';
+                    wrapper.style.padding = '2px 7px 2px 7px';
+                    wrapper.style.display = 'flex';
+                    wrapper.style.alignItems = 'center';
+                    wrapper.style.boxShadow = '0 2px 8px #0006';
+                    wrapper.style.zIndex = '101';
+                    // Dance rate slider
+                    const rateLabel = document.createElement('label');
+                    rateLabel.textContent = 'Rate:';
+                    rateLabel.style.color = '#6cf6ff';
+                    rateLabel.style.fontWeight = '600';
+                    rateLabel.style.fontSize = '0.95em';
+                    rateLabel.style.marginRight = '0.3em';
+                    const rateSlider = document.createElement('input');
+                    rateSlider.type = 'range';
+                    rateSlider.min = '0.2';
+                    rateSlider.max = '3';
+                    rateSlider.step = '0.01';
+                    rateSlider.value = leaf.danceRate || 1;
+                    rateSlider.style.width = '50px';
+                    rateSlider.style.height = '18px';
+                    rateSlider.style.margin = '0 0.3em 0 0';
+                    const rateValue = document.createElement('span');
+                    rateValue.textContent = `${parseFloat(rateSlider.value).toFixed(2)} Hz`;
+                    rateValue.style.fontSize = '0.95em';
+                    rateValue.style.color = '#fff';
+                    rateSlider.addEventListener('input', () => {
+                        leaf.danceRate = parseFloat(rateSlider.value);
+                        rateValue.textContent = `${parseFloat(rateSlider.value).toFixed(2)} Hz`;
+                    });
+                    // Max angle slider
+                    const angleLabel = document.createElement('label');
+                    angleLabel.textContent = 'Angle:';
+                    angleLabel.style.color = '#6cf6ff';
+                    angleLabel.style.fontWeight = '600';
+                    angleLabel.style.fontSize = '0.95em';
+                    angleLabel.style.margin = '0 0.3em 0 0.7em';
+                    const angleSlider = document.createElement('input');
+                    angleSlider.type = 'range';
+                    angleSlider.min = '5';
+                    angleSlider.max = '40';
+                    angleSlider.step = '0.1';
+                    angleSlider.value = leaf.danceRange || 15;
+                    angleSlider.style.width = '50px';
+                    angleSlider.style.height = '18px';
+                    const angleValue = document.createElement('span');
+                    angleValue.textContent = `${parseFloat(angleSlider.value).toFixed(1)}°`;
+                    angleValue.style.fontSize = '0.95em';
+                    angleValue.style.color = '#fff';
+                    angleSlider.addEventListener('input', () => {
+                        leaf.danceRange = parseFloat(angleSlider.value);
+                        angleValue.textContent = `${parseFloat(angleSlider.value).toFixed(1)}°`;
+                    });
+                    wrapper.appendChild(rateLabel);
+                    wrapper.appendChild(rateSlider);
+                    wrapper.appendChild(rateValue);
+                    wrapper.appendChild(angleLabel);
+                    wrapper.appendChild(angleSlider);
+                    wrapper.appendChild(angleValue);
+                    leafOverlay.appendChild(wrapper);
+                });
+            }
+            window.addEventListener('resize', updateLeafOverlay);
+            window.addEventListener('scroll', updateLeafOverlay);
+            setInterval(updateLeafOverlay, 40);
+            updateLeafOverlay();
+        });
+    }
     // Canvas and game constants
     let WIDTH = window.innerWidth;
     let HEIGHT = getAvailableHeight();
@@ -228,12 +317,17 @@ const sketch = (p) => {
     }
 
     function scaleLeaf(leaf) {
+        // Preserve dance state if present
         return {
             x: leaf.x / REF_WIDTH * WIDTH,
             y: leaf.y / REF_HEIGHT * HEIGHT,
             angle: leaf.angle,
             length: leaf.length * (WIDTH / REF_WIDTH),
             color: leaf.color.slice(),
+            dancing: leaf.dancing || false,
+            danceRange: leaf.danceRange,
+            dancePhase: leaf.dancePhase || 0,
+            baseAngle: leaf.baseAngle !== undefined ? leaf.baseAngle : leaf.angle,
         };
     }
     function updateLeafsToCanvas() {
@@ -284,19 +378,21 @@ const sketch = (p) => {
             p.pop();
         }
         // Draw leaves
-        const t = p.millis() / 1000;
         for (const [i, leaf] of LEAFS.entries()) {
             p.push();
             p.translate(leaf.x, leaf.y);
-            // Animate angle if dancing
-            let danceAngle = 0;
-            if (leaf.dance && leaf.dance > 0) {
-                if (!leaf.dancePhase) leaf.dancePhase = Math.random() * Math.PI * 2;
-                danceAngle = Math.sin(t * 2.2 + leaf.dancePhase) * leaf.dance;
+            // Animate dancing leaves
+            if (leaf.dancing) {
+                // Animate at user-set rate and angle
+                const now = performance.now() / 1000;
+                const range = leaf.danceRange !== undefined ? leaf.danceRange : 15;
+                const rate = leaf.danceRate !== undefined ? leaf.danceRate : 1;
+                const base = leaf.baseAngle !== undefined ? leaf.baseAngle : leaf.angle;
+                leaf.angle = base + (range * Math.PI / 180) * Math.sin(2 * Math.PI * rate * now);
             }
-            p.rotate(leaf.angle + danceAngle);
+            p.rotate(leaf.angle);
             p.fill(...leaf.color);
-            // Double-click handler for color change or delete
+            // Double-click handler for color change, delete, or dance
             p.doubleClicked = () => {
                 for (let i = 0; i < LEAFS.length; i++) {
                     const leaf = LEAFS[i];
@@ -307,12 +403,15 @@ const sketch = (p) => {
                             // Delete leaf if ctrl (or cmd) is held
                             LEAFS.splice(i, 1);
                         } else if (window.event && window.event.shiftKey) {
-                            // Shift+double-click: toggle dancing
-                            if (leaf.dance && leaf.dance > 0) {
-                                leaf.dance = 0;
+                            // Toggle dance mode
+                            if (!leaf.dancing) {
+                                leaf.dancing = true;
+                                leaf.danceRange = 10 + Math.random() * 10; // 10-20 deg
+                                leaf.danceRate = 1;
+                                leaf.baseAngle = leaf.angle;
                             } else {
-                                leaf.dance = 0.18;
-                                leaf.dancePhase = Math.random() * Math.PI * 2;
+                                leaf.dancing = false;
+                                leaf.angle = leaf.baseAngle !== undefined ? leaf.baseAngle : leaf.angle;
                             }
                         } else {
                             // Cycle to next color in LEAF_COLORS
