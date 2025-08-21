@@ -199,11 +199,11 @@ const sketch = (p) => {
     const REF_WIDTH = 800;
     const REF_HEIGHT = 600;
     const REF_LEAFS = [
-        { x: 400, y: 300, angle: -0.5, length: 120, color: LEAF_COLORS[0].color },
-        { x: 500, y: 400, angle: 0.3, length: 120, color: LEAF_COLORS[0].color },
-        { x: 300, y: 450, angle: 0.7, length: 120, color: LEAF_COLORS[0].color },
-        { x: 600, y: 250, angle: -0.8, length: 120, color: LEAF_COLORS[0].color },
-        { x: 200, y: 350, angle: 0.5, length: 120, color: LEAF_COLORS[0].color },
+    { x: 400, y: 300, angle: -0.5, length: 110, color: LEAF_COLORS[0].color },
+    { x: 500, y: 400, angle: 0.3, length: 130, color: LEAF_COLORS[0].color },
+    { x: 300, y: 450, angle: 0.7, length: 100, color: LEAF_COLORS[0].color },
+    { x: 600, y: 250, angle: -0.8, length: 140, color: LEAF_COLORS[0].color },
+    { x: 200, y: 350, angle: 0.5, length: 120, color: LEAF_COLORS[0].color },
     ];
     let LEAFS = [];
     let draggingLeaf = null;
@@ -215,6 +215,7 @@ const sketch = (p) => {
     // Spawner state
     let spawners = [];
     let spawnerIntervals = [];
+    let selectedSpawner = null;
     // Add spawner button logic
     if (typeof window !== 'undefined') {
         window.addEventListener('DOMContentLoaded', () => {
@@ -229,6 +230,7 @@ const sketch = (p) => {
                 if (!canvas) return;
                 const rect = canvas.getBoundingClientRect();
                 spawners.forEach((spawner, i) => {
+                    if (selectedSpawner !== i) return;
                     // Project spawner position to page coordinates
                     const x = rect.left + spawner.x;
                     const y = rect.top + spawner.y + 36; // 36px below spawner
@@ -476,6 +478,7 @@ const sketch = (p) => {
 
     p.mousePressed = () => {
         // Spawner handles for all spawners
+        selectedSpawner = null;
         for (let s = 0; s < spawners.length; s++) {
             const spawner = spawners[s];
             // Transform mouse to spawner local space
@@ -489,6 +492,7 @@ const sketch = (p) => {
                 dragOffset.x = p.mouseX - spawner.x;
                 dragOffset.y = p.mouseY - spawner.y;
                 dragOffset.spawnerIndex = s;
+                selectedSpawner = s;
                 return;
             }
             // Angle handle (arrow)
@@ -496,6 +500,7 @@ const sketch = (p) => {
                 dragMode = 'spawner-angle';
                 dragOffset.angle = Math.atan2(p.mouseY - spawner.y, p.mouseX - spawner.x) - spawner.angle;
                 dragOffset.spawnerIndex = s;
+                selectedSpawner = s;
                 return;
             }
             // Velocity handle (circle at end)
@@ -504,6 +509,7 @@ const sketch = (p) => {
                 dragMode = 'spawner-velocity';
                 dragOffset.velocity = spawner.velocity - (localX - 40) / 3;
                 dragOffset.spawnerIndex = s;
+                selectedSpawner = s;
                 return;
             }
         }

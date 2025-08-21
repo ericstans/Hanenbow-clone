@@ -166,8 +166,9 @@
   <h1 style="text-align:center;">Hanenbow (Elektroplankton) Clone</h1>
   <div class="control-panel">
     <div class="control-row">
-      <button id="add-leaf-btn" style="font-size:1em;padding:0.4em 1.2em;border-radius:6px;background:#6cf6ff;color:#23272f;font-weight:600;border:none;box-shadow:0 1px 4px #0003;cursor:pointer;transition:background 0.2s;">Add Leaf</button>
-      <button id="add-spawner-btn" style="font-size:1em;padding:0.4em 1.2em;border-radius:6px;background:#6cf6ff;color:#23272f;font-weight:600;border:none;box-shadow:0 1px 4px #0003;cursor:pointer;transition:background 0.2s;">Add Leaf Spawner</button>
+  <button id="add-leaf-btn" style="font-size:1em;padding:0.4em 1.2em;border-radius:6px;background:#6cf6ff;color:#23272f;font-weight:600;border:none;box-shadow:0 1px 4px #0003;cursor:pointer;transition:background 0.2s;">Add Leaf</button>
+  <button id="add-spawner-btn" style="font-size:1em;padding:0.4em 1.2em;border-radius:6px;background:#6cf6ff;color:#23272f;font-weight:600;border:none;box-shadow:0 1px 4px #0003;cursor:pointer;transition:background 0.2s;">Add Spawner</button>
+  <button id="reset-btn" style="font-size:1em;padding:0.4em 1.2em;border-radius:6px;background:#ff6c6c;color:#fff;font-weight:600;border:none;box-shadow:0 1px 4px #0003;cursor:pointer;transition:background 0.2s;">Reset</button>
     </div>
     <div class="control-row grouped-labels">
       <div class="control-group">
@@ -221,5 +222,16 @@
   
   <div id="leaf-ui-overlay" style="position:absolute; left:0; top:0; pointer-events:none; z-index:11;"></div>
   <!-- Webpack will inject the bundle.js script automatically -->
+</body>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var resetBtn = document.getElementById('reset-btn');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function() {
+        window.location.reload();
+      });
+    }
+  });
+</script>
 </body>
 </html>
