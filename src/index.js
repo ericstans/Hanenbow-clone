@@ -124,36 +124,106 @@ const sketch = (p) => {
     let launching = false;
     let launchStart = null;
     // Spawner state
-    let spawner = null;
-    let spawnerInterval = null;
+    let spawners = [];
+    let spawnerIntervals = [];
     // Add spawner button logic
     if (typeof window !== 'undefined') {
         window.addEventListener('DOMContentLoaded', () => {
             const btn = document.getElementById('add-spawner-btn');
-            if (btn) {
-                btn.addEventListener('click', () => {
-                    if (!spawner) {
-                        spawner = {
-                            x: WIDTH / 2,
-                            y: HEIGHT / 4,
-                            angle: -Math.PI / 2,
-                            velocity: 10
-                        };
-                        // Start interval for spawning balls
-                        if (spawnerInterval) clearInterval(spawnerInterval);
-                        spawnerInterval = setInterval(() => {
-                            if (spawner) {
-                                droplets.push({
-                                    x: spawner.x,
-                                    y: spawner.y,
-                                    vx: spawner.velocity * Math.cos(spawner.angle),
-                                    vy: spawner.velocity * Math.sin(spawner.angle)
-                                });
-                            }
-                        }, 1200);
-                    }
+            const spawnerOverlay = document.getElementById('spawner-ui-overlay');
+            // Helper to create or update overlays
+            function updateSpawnerOverlay() {
+                if (!spawnerOverlay) return;
+                spawnerOverlay.innerHTML = '';
+                // Get canvas position for absolute overlay placement
+                const canvas = document.querySelector('canvas');
+                if (!canvas) return;
+                const rect = canvas.getBoundingClientRect();
+                spawners.forEach((spawner, i) => {
+                    // Project spawner position to page coordinates
+                    const x = rect.left + spawner.x;
+                    const y = rect.top + spawner.y + 36; // 36px below spawner
+                    const wrapper = document.createElement('div');
+                    wrapper.style.position = 'absolute';
+                    wrapper.style.left = `${x - 40}px`;
+                    wrapper.style.top = `${y}px`;
+                    wrapper.style.pointerEvents = 'auto';
+                    wrapper.style.background = 'rgba(34,34,34,0.85)';
+                    wrapper.style.borderRadius = '8px';
+                    wrapper.style.padding = '2px 7px 2px 7px';
+                    wrapper.style.display = 'flex';
+                    wrapper.style.alignItems = 'center';
+                    wrapper.style.boxShadow = '0 2px 8px #0006';
+                    wrapper.style.zIndex = '100';
+                    const label = document.createElement('label');
+                    label.textContent = `Rate:`;
+                    label.style.color = '#6cf6ff';
+                    label.style.fontWeight = '600';
+                    label.style.fontSize = '0.95em';
+                    label.style.marginRight = '0.3em';
+                    const slider = document.createElement('input');
+                    slider.type = 'range';
+                    slider.min = '200';
+                    slider.max = '3000';
+                    slider.step = '10';
+                    slider.value = spawner.spawnRate || 1200;
+                    slider.style.width = '60px';
+                    slider.style.height = '18px';
+                    slider.style.margin = '0 0.3em 0 0';
+                    const valueSpan = document.createElement('span');
+                    valueSpan.textContent = `${Math.round((slider.value / 1000) * 100) / 100}s`;
+                    valueSpan.style.fontSize = '0.95em';
+                    valueSpan.style.color = '#fff';
+                    slider.addEventListener('input', () => {
+                        spawner.spawnRate = parseInt(slider.value);
+                        valueSpan.textContent = `${Math.round((slider.value / 1000) * 100) / 100}s`;
+                        // Reset interval for this spawner
+                        clearInterval(spawnerIntervals[i]);
+                        spawnerIntervals[i] = setInterval(() => {
+                            droplets.push({
+                                x: spawner.x,
+                                y: spawner.y,
+                                vx: spawner.velocity * Math.cos(spawner.angle),
+                                vy: spawner.velocity * Math.sin(spawner.angle)
+                            });
+                        }, spawner.spawnRate);
+                    });
+                    wrapper.appendChild(label);
+                    wrapper.appendChild(slider);
+                    wrapper.appendChild(valueSpan);
+                    spawnerOverlay.appendChild(wrapper);
                 });
             }
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    // Add a new spawner at default position
+                    const newSpawner = {
+                        x: WIDTH / 2,
+                        y: HEIGHT / 4,
+                        angle: -Math.PI / 2,
+                        velocity: 10,
+                        spawnRate: 1200
+                    };
+                    spawners.push(newSpawner);
+                    // Start interval for this spawner
+                    const interval = setInterval(() => {
+                        droplets.push({
+                            x: newSpawner.x,
+                            y: newSpawner.y,
+                            vx: newSpawner.velocity * Math.cos(newSpawner.angle),
+                            vy: newSpawner.velocity * Math.sin(newSpawner.angle)
+                        });
+                    }, newSpawner.spawnRate);
+                    spawnerIntervals.push(interval);
+                    updateSpawnerOverlay();
+                });
+            }
+            // Update overlay on window resize or scroll
+            window.addEventListener('resize', updateSpawnerOverlay);
+            window.addEventListener('scroll', updateSpawnerOverlay);
+            // Update overlay after each draw (to follow spawner movement)
+            setInterval(updateSpawnerOverlay, 40);
+            updateSpawnerOverlay();
         });
     }
 
@@ -191,8 +261,8 @@ const sketch = (p) => {
 
     p.draw = () => {
         p.background(34);
-        // Draw spawner if present
-        if (spawner) {
+        // Draw all spawners
+        for (const spawner of spawners) {
             p.push();
             p.translate(spawner.x, spawner.y);
             p.rotate(spawner.angle);
@@ -291,8 +361,9 @@ const sketch = (p) => {
     };
 
     p.mousePressed = () => {
-        // Spawner handles
-        if (spawner) {
+        // Spawner handles for all spawners
+        for (let s = 0; s < spawners.length; s++) {
+            const spawner = spawners[s];
             // Transform mouse to spawner local space
             const dx = p.mouseX - spawner.x;
             const dy = p.mouseY - spawner.y;
@@ -303,12 +374,14 @@ const sketch = (p) => {
                 dragMode = 'spawner-move';
                 dragOffset.x = p.mouseX - spawner.x;
                 dragOffset.y = p.mouseY - spawner.y;
+                dragOffset.spawnerIndex = s;
                 return;
             }
             // Angle handle (arrow)
             if (Math.abs(localY) < 12 && localX > 28 && localX < 52) {
                 dragMode = 'spawner-angle';
                 dragOffset.angle = Math.atan2(p.mouseY - spawner.y, p.mouseX - spawner.x) - spawner.angle;
+                dragOffset.spawnerIndex = s;
                 return;
             }
             // Velocity handle (circle at end)
@@ -316,6 +389,7 @@ const sketch = (p) => {
             if (Math.abs(localY) < 12 && Math.abs(localX - velHandleX) < 12) {
                 dragMode = 'spawner-velocity';
                 dragOffset.velocity = spawner.velocity - (localX - 40) / 3;
+                dragOffset.spawnerIndex = s;
                 return;
             }
         }
@@ -386,18 +460,22 @@ const sketch = (p) => {
                 const proj = dx * Math.cos(leaf.angle) + dy * Math.sin(leaf.angle);
                 leaf.length = Math.max(40, Math.abs(proj) * 2);
             }
-        } else if (spawner && dragMode) {
-            if (dragMode === 'spawner-move') {
-                spawner.x = p.mouseX - dragOffset.x;
-                spawner.y = p.mouseY - dragOffset.y;
-            } else if (dragMode === 'spawner-angle') {
-                spawner.angle = Math.atan2(p.mouseY - spawner.y, p.mouseX - spawner.x) - dragOffset.angle;
-            } else if (dragMode === 'spawner-velocity') {
-                // Project mouse position onto spawner's axis
-                const dx = p.mouseX - spawner.x;
-                const dy = p.mouseY - spawner.y;
-                const localX = dx * Math.cos(-spawner.angle) - dy * Math.sin(-spawner.angle);
-                spawner.velocity = Math.max(2, Math.min(30, (localX - 40) / 3));
+        } else if (dragMode && dragMode.startsWith('spawner')) {
+            const s = dragOffset.spawnerIndex;
+            if (s !== undefined && spawners[s]) {
+                const spawner = spawners[s];
+                if (dragMode === 'spawner-move') {
+                    spawner.x = p.mouseX - dragOffset.x;
+                    spawner.y = p.mouseY - dragOffset.y;
+                } else if (dragMode === 'spawner-angle') {
+                    spawner.angle = Math.atan2(p.mouseY - spawner.y, p.mouseX - spawner.x) - dragOffset.angle;
+                } else if (dragMode === 'spawner-velocity') {
+                    // Project mouse position onto spawner's axis
+                    const dx = p.mouseX - spawner.x;
+                    const dy = p.mouseY - spawner.y;
+                    const localX = dx * Math.cos(-spawner.angle) - dy * Math.sin(-spawner.angle);
+                    spawner.velocity = Math.max(2, Math.min(30, (localX - 40) / 3));
+                }
             }
         }
     };
