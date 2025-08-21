@@ -65,6 +65,27 @@ const sketch = (p) => {
     let WIDTH = window.innerWidth;
     let HEIGHT = getAvailableHeight();
 
+    // Add Leaf button logic
+    if (typeof window !== 'undefined') {
+        window.addEventListener('DOMContentLoaded', () => {
+            const addLeafBtn = document.getElementById('add-leaf-btn');
+            if (addLeafBtn) {
+                addLeafBtn.addEventListener('click', () => {
+                    // Add a new leaf at a default position and color
+                    const defaultColor = [60, 200, 60];
+                    const newLeaf = {
+                        x: WIDTH / 2,
+                        y: HEIGHT / 2,
+                        angle: 0,
+                        length: 120,
+                        color: defaultColor.slice(),
+                    };
+                    LEAFS.push(newLeaf);
+                });
+            }
+        });
+    }
+
     function getAvailableHeight() {
         // Subtract the height of controls/header from window.innerHeight
         const header = document.querySelector('h1');
@@ -198,17 +219,22 @@ const sketch = (p) => {
             p.translate(leaf.x, leaf.y);
             p.rotate(leaf.angle);
             p.fill(...leaf.color);
-            // Double-click handler for color change (cycles through four preset colors)
+            // Double-click handler for color change or delete
             p.doubleClicked = () => {
                 for (let i = 0; i < LEAFS.length; i++) {
                     const leaf = LEAFS[i];
                     const local = toLeafLocal(leaf, p.mouseX, p.mouseY);
                     // Double-click on MOVE handle (center)
                     if (dist(local.x, local.y, 0, 0) < 16) {
-                        // Cycle to next color in LEAF_COLORS
-                        let idx = LEAF_COLORS.findIndex(c => arraysEqual(c.color, leaf.color));
-                        idx = (idx + 1) % LEAF_COLORS.length;
-                        leaf.color = LEAF_COLORS[idx].color;
+                        if (window.event && (window.event.ctrlKey || window.event.metaKey)) {
+                            // Delete leaf if ctrl (or cmd) is held
+                            LEAFS.splice(i, 1);
+                        } else {
+                            // Cycle to next color in LEAF_COLORS
+                            let idx = LEAF_COLORS.findIndex(c => arraysEqual(c.color, leaf.color));
+                            idx = (idx + 1) % LEAF_COLORS.length;
+                            leaf.color = LEAF_COLORS[idx].color;
+                        }
                         return;
                     }
                 }
@@ -527,8 +553,9 @@ const sketch = (p) => {
                 break;
             }
             case 'fifths': {
-                // Perfect fifths: C G D A E B F# (0,7,2,9,4,11,6)
-                const scale = [0, 7];
+                // Full circle of fifths within the octave: C G D A E B F# C# G# D# A# F
+                // Semitone steps: [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5]
+                const scale = [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5];
                 quantizedMidi = quantizeToScale(midi, scale);
                 break;
             }
@@ -550,8 +577,10 @@ const sketch = (p) => {
     }
 
     function quantizeToScale(midi, scale) {
-        const base = Math.floor(midi / 12) * 12;
-        const note = Math.round(midi) % 12;
+        // Clamp negative midi to 0
+        const midiClamped = midi < 0 ? 0 : midi;
+        const base = Math.floor(midiClamped / 12) * 12;
+        const note = Math.round(midiClamped) % 12;
         let best = scale[0];
         let minDist = Math.abs(note - scale[0]);
         for (let i = 1; i < scale.length; ++i) {
@@ -561,7 +590,7 @@ const sketch = (p) => {
                 minDist = dist;
             }
         }
-        return base + best + Math.round(midi - Math.round(midi));
+        return base + best + Math.round(midiClamped - Math.round(midiClamped));
     }
 
     // Utility: compare two arrays for equality
