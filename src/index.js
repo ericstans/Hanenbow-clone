@@ -62,6 +62,7 @@ import p5 from "p5";
 
 const sketch = (p) => {
     // --- DANCING LEAF UI OVERLAY ---
+    let selectedLeaf = null;
     if (typeof window !== 'undefined') {
         window.addEventListener('DOMContentLoaded', () => {
             const leafOverlay = document.getElementById('leaf-ui-overlay');
@@ -71,8 +72,8 @@ const sketch = (p) => {
                 const canvas = document.querySelector('canvas');
                 if (!canvas) return;
                 const rect = canvas.getBoundingClientRect();
-                LEAFS.forEach((leaf, i) => {
-                    if (!leaf.dancing) return;
+                if (selectedLeaf !== null && LEAFS[selectedLeaf] && LEAFS[selectedLeaf].dancing) {
+                    const leaf = LEAFS[selectedLeaf];
                     // Project leaf position to page coordinates
                     const x = rect.left + leaf.x;
                     const y = rect.top + leaf.y + 30; // 30px below leaf
@@ -142,7 +143,7 @@ const sketch = (p) => {
                     wrapper.appendChild(angleSlider);
                     wrapper.appendChild(angleValue);
                     leafOverlay.appendChild(wrapper);
-                });
+                }
             }
             window.addEventListener('resize', updateLeafOverlay);
             window.addEventListener('scroll', updateLeafOverlay);
@@ -478,7 +479,13 @@ const sketch = (p) => {
 
     p.mousePressed = () => {
         // Spawner handles for all spawners
-        selectedSpawner = null;
+        // Prevent deselection if clicking inside spawner overlay
+        let spawnerOverlay = document.getElementById('spawner-ui-overlay');
+        if (spawnerOverlay && window.event && spawnerOverlay.contains(window.event.target)) {
+            // Don't clear selection
+        } else {
+            selectedSpawner = null;
+        }
         for (let s = 0; s < spawners.length; s++) {
             const spawner = spawners[s];
             // Transform mouse to spawner local space
@@ -514,6 +521,13 @@ const sketch = (p) => {
             }
         }
         // Check if clicking a leaf handle
+        // Prevent deselection if clicking inside leaf overlay
+        let leafOverlay = document.getElementById('leaf-ui-overlay');
+        if (leafOverlay && window.event && leafOverlay.contains(window.event.target)) {
+            // Don't clear selection
+        } else {
+            selectedLeaf = null;
+        }
         for (let i = 0; i < LEAFS.length; i++) {
             const leaf = LEAFS[i];
             const local = toLeafLocal(leaf, p.mouseX, p.mouseY);
@@ -523,6 +537,7 @@ const sketch = (p) => {
                 dragMode = 'move';
                 dragOffset.x = p.mouseX - leaf.x;
                 dragOffset.y = p.mouseY - leaf.y;
+                if (leaf.dancing) selectedLeaf = i;
                 return;
             }
             // Rotate handle (right end)
