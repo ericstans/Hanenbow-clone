@@ -26,10 +26,10 @@ jobs:
       - name: Build with npm
         run: npm ci && npm run build
 
-      - name: Upload dist folder to GitHub Pages
+      - name: Upload public folder to GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: public
 
       - name: Deploy to GitHub Pages
         id: deployment
