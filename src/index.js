@@ -284,10 +284,17 @@ const sketch = (p) => {
             p.pop();
         }
         // Draw leaves
+        const t = p.millis() / 1000;
         for (const [i, leaf] of LEAFS.entries()) {
             p.push();
             p.translate(leaf.x, leaf.y);
-            p.rotate(leaf.angle);
+            // Animate angle if dancing
+            let danceAngle = 0;
+            if (leaf.dance && leaf.dance > 0) {
+                if (!leaf.dancePhase) leaf.dancePhase = Math.random() * Math.PI * 2;
+                danceAngle = Math.sin(t * 2.2 + leaf.dancePhase) * leaf.dance;
+            }
+            p.rotate(leaf.angle + danceAngle);
             p.fill(...leaf.color);
             // Double-click handler for color change or delete
             p.doubleClicked = () => {
@@ -299,6 +306,14 @@ const sketch = (p) => {
                         if (window.event && (window.event.ctrlKey || window.event.metaKey)) {
                             // Delete leaf if ctrl (or cmd) is held
                             LEAFS.splice(i, 1);
+                        } else if (window.event && window.event.shiftKey) {
+                            // Shift+double-click: toggle dancing
+                            if (leaf.dance && leaf.dance > 0) {
+                                leaf.dance = 0;
+                            } else {
+                                leaf.dance = 0.18;
+                                leaf.dancePhase = Math.random() * Math.PI * 2;
+                            }
                         } else {
                             // Cycle to next color in LEAF_COLORS
                             let idx = LEAF_COLORS.findIndex(c => arraysEqual(c.color, leaf.color));
