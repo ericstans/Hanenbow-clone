@@ -25,14 +25,14 @@ if (typeof window !== 'undefined') {
     if (r) r.addEventListener('input', () => { window.envRelease = parseFloat(r.value); });
     });
 }
-// Pitch quantization mode: 'none', 'major', 'minor', 'fifths', 'chromatic', 'octaves'
+// Pitch quantization mode: 'none', 'major', 'minor', 'chromatic'
 window.quantizeMode = 'none';
 if (typeof window !== 'undefined') {
     window.addEventListener('DOMContentLoaded', () => {
         const select = document.getElementById('pitch-mode');
         if (select) {
             select.addEventListener('change', e => {
-                pitchMode = select.value;
+                window.pitchMode = select.value;
             });
         }
         const qselect = document.getElementById('quantize-mode');
@@ -45,16 +45,7 @@ if (typeof window !== 'undefined') {
 }
 // Sound pitch mode: 'length', 'angle', 'speed', 'bounce'
 window.pitchMode = 'length';
-if (typeof window !== 'undefined') {
-    window.addEventListener('DOMContentLoaded', () => {
-        const select = document.getElementById('pitch-mode');
-        if (select) {
-            select.addEventListener('change', e => {
-                window.pitchMode = select.value;
-            });
-        }
-    });
-}
+// (Handled above)
 import p5 from "p5";
 import { sketch } from "./sketch";
 new p5(sketch, document.getElementById("game-area-container"));
