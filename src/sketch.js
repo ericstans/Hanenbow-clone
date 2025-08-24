@@ -425,11 +425,6 @@ export const sketch = (p) => {
             for (const leaf of LEAFS) {
                 if (collideLeaf(d, leaf)) {
                     bounceOffLeaf(d, leaf);
-                    // Play sound: pitch based on leaf length (longer = lower)
-                    const minFreq = 220;
-                    const maxFreq = 880;
-                    const freq = maxFreq - (leaf.length - 40) / (200 - 40) * (maxFreq - minFreq);
-                    playBounceSound(freq);
                 }
             }
         }
@@ -514,18 +509,26 @@ export const sketch = (p) => {
                 if (leaf.dancing) selectedLeaf = i;
                 return;
             }
-            // Rotate handle (right end)
+            // Move end point (right handle)
             if (dist(local.x, local.y, leaf.length / 2, 0) < 10) {
                 draggingLeaf = i;
-                dragMode = 'rotate';
-                dragOffset.angle = Math.atan2(p.mouseY - leaf.y, p.mouseX - leaf.x) - leaf.angle;
+                dragMode = 'move-end';
+                // Store offset from mouse to end point
+                const endX = leaf.x + Math.cos(leaf.angle) * (leaf.length / 2);
+                const endY = leaf.y + Math.sin(leaf.angle) * (leaf.length / 2);
+                dragOffset.dx = endX - p.mouseX;
+                dragOffset.dy = endY - p.mouseY;
                 return;
             }
-            // Resize handle (left end)
+            // Move start point (left handle)
             if (dist(local.x, local.y, -leaf.length / 2, 0) < 10) {
                 draggingLeaf = i;
-                dragMode = 'resize';
-                dragOffset.length = leaf.length + (leaf.x - p.mouseX) * Math.cos(leaf.angle) + (leaf.y - p.mouseY) * Math.sin(leaf.angle);
+                dragMode = 'move-start';
+                // Store offset from mouse to start point
+                const startX = leaf.x - Math.cos(leaf.angle) * (leaf.length / 2);
+                const startY = leaf.y - Math.sin(leaf.angle) * (leaf.length / 2);
+                dragOffset.dx = startX - p.mouseX;
+                dragOffset.dy = startY - p.mouseY;
                 return;
             }
         }
@@ -560,14 +563,32 @@ export const sketch = (p) => {
             if (dragMode === 'move') {
                 leaf.x = p.mouseX - dragOffset.x;
                 leaf.y = p.mouseY - dragOffset.y;
-            } else if (dragMode === 'rotate') {
-                leaf.angle = Math.atan2(p.mouseY - leaf.y, p.mouseX - leaf.x) - dragOffset.angle;
-            } else if (dragMode === 'resize') {
-                // Project mouse position onto leaf's axis
-                const dx = p.mouseX - leaf.x;
-                const dy = p.mouseY - leaf.y;
-                const proj = dx * Math.cos(leaf.angle) + dy * Math.sin(leaf.angle);
-                leaf.length = Math.max(40, Math.abs(proj) * 2);
+            } else if (dragMode === 'move-end') {
+                // Move the end point, update angle and length
+                const startX = leaf.x - Math.cos(leaf.angle) * (leaf.length / 2);
+                const startY = leaf.y - Math.sin(leaf.angle) * (leaf.length / 2);
+                const newEndX = p.mouseX + dragOffset.dx;
+                const newEndY = p.mouseY + dragOffset.dy;
+                const dx = newEndX - startX;
+                const dy = newEndY - startY;
+                leaf.length = Math.max(40, Math.sqrt(dx * dx + dy * dy));
+                leaf.angle = Math.atan2(dy, dx);
+                // Re-center leaf
+                leaf.x = (startX + newEndX) / 2;
+                leaf.y = (startY + newEndY) / 2;
+            } else if (dragMode === 'move-start') {
+                // Move the start point, update angle and length
+                const endX = leaf.x + Math.cos(leaf.angle) * (leaf.length / 2);
+                const endY = leaf.y + Math.sin(leaf.angle) * (leaf.length / 2);
+                const newStartX = p.mouseX + dragOffset.dx;
+                const newStartY = p.mouseY + dragOffset.dy;
+                const dx = endX - newStartX;
+                const dy = endY - newStartY;
+                leaf.length = Math.max(40, Math.sqrt(dx * dx + dy * dy));
+                leaf.angle = Math.atan2(dy, dx);
+                // Re-center leaf
+                leaf.x = (endX + newStartX) / 2;
+                leaf.y = (endY + newStartY) / 2;
             }
         } else if (dragMode && dragMode.startsWith('spawner')) {
             const s = dragOffset.spawnerIndex;
