@@ -16,7 +16,7 @@ export function createSpawner(WIDTH, HEIGHT) {
         x: WIDTH / 2,
         y: HEIGHT / 4,
         angle: -Math.PI / 2,
-        velocity: 10,
+        velocity: 4,
         spawnRate: 1200
     });
 }

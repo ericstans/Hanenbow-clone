@@ -2,8 +2,13 @@ import { setupLeafOverlay, setupSpawnerOverlay } from './ui-overlays.js';
 import { playBounceSound, quantizeFreq } from './sound.js';
 import { LEAF_COLORS, REF_WIDTH, REF_HEIGHT, REF_LEAFS } from './constants.js';
 import { arraysEqual, dist } from './utils.js';
+import { createSpawner } from './spawner.js';
 
 export const sketch = (p) => {
+    // --- Double-tap detection for touch devices ---
+    let lastTapTime = 0;
+    let lastTapX = 0;
+    let lastTapY = 0;
     // Show/hide instructions panel
     let showInstructions = true;
     // --- DANCING LEAF UI OVERLAY ---
@@ -203,14 +208,8 @@ export const sketch = (p) => {
             }
             if (btn) {
                 btn.addEventListener('click', () => {
-                    // Add a new spawner at default position
-                    const newSpawner = {
-                        x: WIDTH / 2,
-                        y: HEIGHT / 4,
-                        angle: -Math.PI / 2,
-                        velocity: 10,
-                        spawnRate: 1200
-                    };
+                    // Add a new spawner using the model helper
+                    const newSpawner = createSpawner(WIDTH, HEIGHT);
                     spawners.push(newSpawner);
                     // Start interval for this spawner
                     const interval = setInterval(() => {
@@ -552,6 +551,26 @@ export const sketch = (p) => {
     p.mousePressed = () => pointerPressed(p);
     p.touchStarted = (e) => {
         if (e.cancelable) e.preventDefault();
+        // Double-tap detection
+        const touch = e.touches && e.touches[0];
+        const now = Date.now();
+        if (touch) {
+            const x = touch.clientX;
+            const y = touch.clientY;
+            const dt = now - lastTapTime;
+            const dist = Math.sqrt((x - lastTapX) * (x - lastTapX) + (y - lastTapY) * (y - lastTapY));
+            if (dt < 400 && dist < 40) {
+                // Considered a double-tap
+                if (typeof p.doubleClicked === 'function') p.doubleClicked();
+                lastTapTime = 0; // reset
+                lastTapX = 0;
+                lastTapY = 0;
+                return false;
+            }
+            lastTapTime = now;
+            lastTapX = x;
+            lastTapY = y;
+        }
         pointerPressed(p);
         return false;
     };
