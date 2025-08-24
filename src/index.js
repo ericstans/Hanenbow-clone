@@ -13,17 +13,15 @@ if (typeof window !== 'undefined') {
 // ASDR envelope values (seconds)
 window.envAttack = 0.01;
 window.envDecay = 0.05;
-window.envSustain = 0.2;
 window.envRelease = 0.15;
 if (typeof window !== 'undefined') {
     window.addEventListener('DOMContentLoaded', () => {
         const a = document.getElementById('attack-slider');
         const d = document.getElementById('decay-slider');
-        const s = document.getElementById('sustain-slider');
+    // const s = document.getElementById('sustain-slider');
         const r = document.getElementById('release-slider');
     if (a) a.addEventListener('input', () => { window.envAttack = parseFloat(a.value); });
     if (d) d.addEventListener('input', () => { window.envDecay = parseFloat(d.value); });
-    if (s) s.addEventListener('input', () => { window.envSustain = parseFloat(s.value); });
     if (r) r.addEventListener('input', () => { window.envRelease = parseFloat(r.value); });
     });
 }

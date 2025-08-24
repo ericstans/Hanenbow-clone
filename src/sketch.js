@@ -1,3 +1,8 @@
+import { setupLeafOverlay, setupSpawnerOverlay } from './ui-overlays.js';
+import { playBounceSound, quantizeFreq } from './sound.js';
+import { LEAF_COLORS, REF_WIDTH, REF_HEIGHT, REF_LEAFS } from './constants.js';
+import { arraysEqual, dist } from './utils.js';
+
 export const sketch = (p) => {
     // Show/hide instructions panel
     let showInstructions = true;
@@ -116,33 +121,6 @@ export const sketch = (p) => {
         });
     }
 
-    function getAvailableHeight() {
-        // Use the height of the #game-area-container for the canvas
-        const container = document.getElementById('game-area-container');
-        if (container) {
-            const rect = container.getBoundingClientRect();
-            return Math.max(100, rect.height);
-        }
-        return Math.max(100, window.innerHeight);
-    }
-    // Five preset colors mapped to oscillator types (last is noise)
-    const LEAF_COLORS = [
-        { color: [60, 200, 60], type: 'triangle' },   // green
-        { color: [200, 60, 60], type: 'sine' },       // red
-        { color: [60, 120, 200], type: 'square' },    // blue
-        { color: [220, 200, 60], type: 'sawtooth' },  // yellow
-        { color: [180, 180, 180], type: 'noise' },    // gray (noise)
-    ];
-    // Reference size for default arrangement
-    const REF_WIDTH = 800;
-    const REF_HEIGHT = 600;
-    const REF_LEAFS = [
-    { x: 400, y: 300, angle: -0.5, length: 110, color: LEAF_COLORS[0].color },
-    { x: 500, y: 400, angle: 0.3, length: 130, color: LEAF_COLORS[0].color },
-    { x: 300, y: 450, angle: 0.7, length: 100, color: LEAF_COLORS[0].color },
-    { x: 600, y: 250, angle: -0.8, length: 140, color: LEAF_COLORS[0].color },
-    { x: 200, y: 350, angle: 0.5, length: 120, color: LEAF_COLORS[0].color },
-    ];
     let LEAFS = [];
     let draggingLeaf = null;
     let dragMode = null; // 'move', 'rotate', 'resize', 'spawner-move', 'spawner-angle', 'spawner-velocity'
@@ -624,10 +602,6 @@ export const sketch = (p) => {
         return Math.abs(local.x) < leaf.length / 2 && Math.abs(local.y) < 12;
     }
 
-    function dist(x1, y1, x2, y2) {
-        return Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
-    }
-
     function collideLeaf(d, leaf) {
         // Simple ellipse collision, using leaf.length
         const lx = leaf.x;
@@ -717,7 +691,7 @@ export const sketch = (p) => {
         gain.gain.cancelScheduledValues(now);
         gain.gain.setValueAtTime(0, now);
         gain.gain.linearRampToValueAtTime(velocity, now + envAttack);
-        gain.gain.linearRampToValueAtTime(envSustain * velocity, now + envAttack + envDecay);
+        gain.gain.linearRampToValueAtTime(1 * velocity, now + envAttack + envDecay);
         gain.gain.linearRampToValueAtTime(0, now + envAttack + envDecay + envRelease);
         if (oscType === 'noise') {
             // Create white noise buffer
@@ -742,70 +716,4 @@ export const sketch = (p) => {
         }
     }
 
-    // Quantize frequency to scale
-    function quantizeFreq(freq, minFreq, maxFreq) {
-        if (quantizeMode === 'none') return freq;
-        // Convert to MIDI note
-        const midi = 69 + 12 * Math.log2(freq / 440);
-        let quantizedMidi;
-        switch (quantizeMode) {
-            case 'major': {
-                // C major scale: C D E F G A B (0,2,4,5,7,9,11)
-                const scale = [0, 2, 4, 5, 7, 9, 11];
-                quantizedMidi = quantizeToScale(midi, scale);
-                break;
-            }
-            case 'minor': {
-                // C natural minor: C D D# F G G# A# (0,2,3,5,7,8,10)
-                const scale = [0, 2, 3, 5, 7, 8, 10];
-                quantizedMidi = quantizeToScale(midi, scale);
-                break;
-            }
-            case 'fifths': {
-                // Full circle of fifths within the octave: C G D A E B F# C# G# D# A# F
-                // Semitone steps: [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5]
-                const scale = [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5];
-                quantizedMidi = quantizeToScale(midi, scale);
-                break;
-            }
-            case 'chromatic': {
-                quantizedMidi = Math.round(midi);
-                break;
-            }
-            case 'octaves': {
-                // Quantize to C in each octave
-                quantizedMidi = Math.round(midi / 12) * 12;
-                break;
-            }
-            default:
-                return freq;
-        }
-        // Convert back to frequency, clamp to min/max
-        const quantFreq = 440 * Math.pow(2, (quantizedMidi - 69) / 12);
-        return Math.max(minFreq, Math.min(maxFreq, quantFreq));
-    }
-
-    function quantizeToScale(midi, scale) {
-        // Clamp negative midi to 0
-        const midiClamped = midi < 0 ? 0 : midi;
-        const base = Math.floor(midiClamped / 12) * 12;
-        const note = Math.round(midiClamped) % 12;
-        let best = scale[0];
-        let minDist = Math.abs(note - scale[0]);
-        for (let i = 1; i < scale.length; ++i) {
-            const dist = Math.abs(note - scale[i]);
-            if (dist < minDist) {
-                best = scale[i];
-                minDist = dist;
-            }
-        }
-        return base + best + Math.round(midiClamped - Math.round(midiClamped));
-    }
-
-    // Utility: compare two arrays for equality
-    function arraysEqual(a, b) {
-        if (a.length !== b.length) return false;
-        for (let i = 0; i < a.length; ++i) if (a[i] !== b[i]) return false;
-        return true;
-    }
 }
