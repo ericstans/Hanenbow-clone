@@ -1,6 +1,8 @@
 // Sound and synthesis logic for Hanenbow
 // Exports: playBounceSound, quantizeFreq, quantizeToScale
 
+import { LEAF_COLORS } from './constants.js';
+
 let audioCtx = null;
 export function getAudioContext() {
     if (!audioCtx) {
@@ -9,8 +11,13 @@ export function getAudioContext() {
     return audioCtx;
 }
 
-export function playBounceSound({leaf, droplet, nx, ny, pitchMode, quantizeMode, velocityMode, envAttack, envDecay, envSustain, envRelease, LEAF_COLORS}) {
+export function playBounceSound({leaf, droplet, nx, ny, pitchMode, quantizeMode, velocityMode, envAttack, envDecay, envSustain, envRelease}) {
     if (!leaf || !droplet) return;
+    // Provide safe defaults if any envelope param is missing or invalid
+    envAttack = Number.isFinite(envAttack) ? envAttack : 0.01;
+    envDecay = Number.isFinite(envDecay) ? envDecay : 0.05;
+    envSustain = Number.isFinite(envSustain) ? envSustain : 0.2;
+    envRelease = Number.isFinite(envRelease) ? envRelease : 0.15;
     const minFreq = 220;
     const maxFreq = 880;
     let freq;

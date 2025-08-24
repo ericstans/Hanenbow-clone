@@ -638,82 +638,13 @@ export const sketch = (p) => {
             droplet: d,
             nx,
             ny,
+            pitchMode: window.pitchMode,
+            quantizeMode: window.quantizeMode,
+            velocityMode: window.velocityMode,
+            envAttack: window.envAttack,
+            envDecay: window.envDecay,
+            envSustain: window.envSustain,
+            envRelease: window.envRelease,
         });
     }
-
-    // Web Audio API bounce sound
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playBounceSound({leaf, droplet, nx, ny}) {
-        if (!leaf || !droplet) return;
-        const minFreq = 220;
-        const maxFreq = 880;
-        let freq;
-        switch (pitchMode) {
-            case 'length':
-                freq = maxFreq - (leaf.length - 40) / (200 - 40) * (maxFreq - minFreq);
-                break;
-            case 'angle':
-                freq = minFreq + ((leaf.angle + Math.PI) / (2 * Math.PI)) * (maxFreq - minFreq);
-                break;
-            case 'speed':
-                const speed = Math.sqrt(droplet.vx * droplet.vx + droplet.vy * droplet.vy);
-                freq = Math.max(minFreq, Math.min(maxFreq, minFreq + (speed * 60)));
-                break;
-            case 'bounce':
-                const vlen = Math.sqrt(droplet.vx * droplet.vx + droplet.vy * droplet.vy);
-                let dot = 0;
-                if (vlen > 0) {
-                    dot = (droplet.vx * nx + droplet.vy * ny) / vlen;
-                }
-                freq = minFreq + ((dot + 1) / 2) * (maxFreq - minFreq);
-                break;
-            default:
-                freq = minFreq;
-        }
-        freq = quantizeFreq(freq, minFreq, maxFreq);
-        // Map color to oscillator type
-        let oscType = 'triangle';
-        for (const c of LEAF_COLORS) {
-            if (arraysEqual(leaf.color, c.color)) {
-                oscType = c.type;
-                break;
-            }
-        }
-        // Determine gain based on velocity mode
-        let velocity = 0.2;
-        if (velocityMode === 'speed') {
-            const speed = Math.sqrt(droplet.vx * droplet.vx + droplet.vy * droplet.vy);
-            velocity = Math.max(0.05, Math.min(0.5, speed * 0.05));
-        }
-        const gain = audioCtx.createGain();
-        gain.connect(audioCtx.destination);
-        const now = audioCtx.currentTime;
-        gain.gain.cancelScheduledValues(now);
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(velocity, now + envAttack);
-        gain.gain.linearRampToValueAtTime(1 * velocity, now + envAttack + envDecay);
-        gain.gain.linearRampToValueAtTime(0, now + envAttack + envDecay + envRelease);
-        if (oscType === 'noise') {
-            // Create white noise buffer
-            const bufferSize = audioCtx.sampleRate * (envAttack + envDecay + envRelease);
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                data[i] = Math.random() * 2 - 1;
-            }
-            const noise = audioCtx.createBufferSource();
-            noise.buffer = buffer;
-            noise.connect(gain);
-            noise.start(now);
-            noise.stop(now + envAttack + envDecay + envRelease);
-        } else {
-            const osc = audioCtx.createOscillator();
-            osc.type = oscType;
-            osc.frequency.value = freq;
-            osc.connect(gain);
-            osc.start(now);
-            osc.stop(now + envAttack + envDecay + envRelease);
-        }
-    }
-
 }
