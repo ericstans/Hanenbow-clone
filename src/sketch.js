@@ -283,7 +283,7 @@ export const sketch = (p) => {
         if (showInstructions) {
             p.push();
             p.textSize(18);
-            const panelX = 16, panelY = 16, panelW = 420, panelH = 128;
+            const panelX = 0, panelY = 0, panelW = 420, panelH = 128;
             const textX = panelX + 12, textY = panelY + 12;
             // Draw panel background
             p.fill(0, 0, 0, 120);
@@ -420,7 +420,7 @@ export const sketch = (p) => {
         for (const d of droplets) {
             d.x += d.vx;
             d.y += d.vy;
-            d.vy += 0.15; // gravity
+            d.vy += 0.15 * (window.ballWeight || 1); // gravity scales with weight
             // Collide with leaves
             for (const leaf of LEAFS) {
                 if (collideLeaf(d, leaf)) {
@@ -648,8 +648,9 @@ export const sketch = (p) => {
         d.vx = d.vx - 2 * dot * nx;
         d.vy = d.vy - 2 * dot * ny;
         // Dampen speed a bit
-        d.vx *= 0.9;
-        d.vy *= 0.9;
+    const b = (typeof window !== 'undefined' && window.bounciness !== undefined) ? window.bounciness : 0.9;
+    d.vx *= b;
+    d.vy *= b;
         // Move droplet out of collision
         d.x += d.vx * 2;
         d.y += d.vy * 2;

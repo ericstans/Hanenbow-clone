@@ -2,11 +2,11 @@
 // Exports: LEAF_COLORS, REF_WIDTH, REF_HEIGHT, REF_LEAFS
 
 export const LEAF_COLORS = [
-    { color: [60, 200, 60], type: 'triangle' },   // green
-    { color: [200, 60, 60], type: 'sine' },       // red
-    { color: [60, 120, 200], type: 'square' },    // blue
-    { color: [220, 200, 60], type: 'sawtooth' },  // yellow
-    { color: [180, 180, 180], type: 'noise' },    // gray (noise)
+    { color: [60, 200, 60], type: 'triangle', velocityScale: 1 },     // green
+    { color: [200, 60, 60], type: 'sine', velocityScale: 1.2 },       // red
+    { color: [60, 120, 200], type: 'square', velocityScale: 0.5 },    // blue
+    { color: [220, 200, 60], type: 'sawtooth', velocityScale: 0.7 },  // yellow
+    { color: [180, 180, 180], type: 'noise', velocityScale: 0.6 },    // gray (noise)
 ];
 
 export const REF_WIDTH = 800;

@@ -11,6 +11,17 @@ if (typeof window !== 'undefined') {
     });
 }
 // ASDR envelope values (seconds)
+// Ball physics globals
+window.ballWeight = 1;
+window.bounciness = 0.9;
+if (typeof window !== 'undefined') {
+    window.addEventListener('DOMContentLoaded', () => {
+        const w = document.getElementById('weight-slider');
+        const b = document.getElementById('bounciness-slider');
+        if (w) w.addEventListener('input', () => { window.ballWeight = parseFloat(w.value); });
+        if (b) b.addEventListener('input', () => { window.bounciness = parseFloat(b.value); });
+    });
+}
 window.envAttack = 0.01;
 window.envDecay = 0.05;
 window.envRelease = 0.15;

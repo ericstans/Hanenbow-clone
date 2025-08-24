@@ -1,3 +1,11 @@
+/* Collapsible control panel */
+.control-panel.collapsed {
+  min-height: 0 !important;
+  height: 38px !important;
+  overflow: hidden !important;
+  padding-bottom: 0 !important;
+  transition: height 0.2s;
+}
 html, body { height: 100%; margin: 0; padding: 0; }
 body {
   background: #222;
@@ -31,9 +39,9 @@ body {
 }
 .control-panel {
   background: linear-gradient(135deg, #23272f 60%, #1a1d22 100%);
-  border-radius: 18px;
-  margin: 0.5em auto 0.5em auto;
-  padding: 1.5em 2.5em 1.2em 2.5em;
+  border-radius: 18px 18px 0 0;
+  margin: 0.5em auto 0 auto;
+  padding: 0.5em 2.5em 1.2em 2.5em;
   max-width: 950px;
   display: flex;
   flex-direction: column;

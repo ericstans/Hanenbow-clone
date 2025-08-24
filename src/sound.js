@@ -46,19 +46,21 @@ export function playBounceSound({leaf, droplet, nx, ny, pitchMode, quantizeMode,
             freq = minFreq;
     }
     freq = quantizeFreq(freq, minFreq, maxFreq, quantizeMode);
-    // Map color to oscillator type
+    // Map color to oscillator type and velocity scale
     let oscType = 'triangle';
+    let velocityScale = 1.0;
     for (const c of LEAF_COLORS) {
         if (arraysEqual(leaf.color, c.color)) {
             oscType = c.type;
+            velocityScale = c.velocityScale !== undefined ? c.velocityScale : 1.0;
             break;
         }
     }
-    // Determine gain based on velocity mode
-    let velocity = 0.2;
+    // Determine gain based on velocity mode, apply velocityScale
+    let velocity = 0.2 * velocityScale;
     if (velocityMode === 'speed') {
         const speed = Math.sqrt(droplet.vx * droplet.vx + droplet.vy * droplet.vy);
-        velocity = Math.max(0.05, Math.min(0.5, speed * 0.05));
+        velocity = Math.max(0.05, Math.min(0.5, speed * 0.05 * velocityScale));
     }
     const ctx = getAudioContext();
     const gain = ctx.createGain();
@@ -110,20 +112,8 @@ export function quantizeFreq(freq, minFreq, maxFreq, quantizeMode) {
             quantizedMidi = quantizeToScale(midi, scale);
             break;
         }
-        case 'fifths': {
-            // Full circle of fifths within the octave: C G D A E B F# C# G# D# A# F
-            // Semitone steps: [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5]
-            const scale = [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5];
-            quantizedMidi = quantizeToScale(midi, scale);
-            break;
-        }
         case 'chromatic': {
             quantizedMidi = Math.round(midi);
-            break;
-        }
-        case 'octaves': {
-            // Quantize to C in each octave
-            quantizedMidi = Math.round(midi / 12) * 12;
             break;
         }
         default:
