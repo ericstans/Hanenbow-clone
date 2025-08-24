@@ -13,8 +13,9 @@
   <div id="spawner-ui-overlay"></div>
   <div id="leaf-ui-overlay"></div>
   <form id="control-form">
-    <div class="control-panel collapsed" id="control-panel">
-      <button id="toggle-panel-btn" type="button" style="position:absolute;right:18px;top:10px;z-index:200;background:#23272f;color:#6cf6ff;border:none;border-radius:6px;padding:0.3em 1em;font-weight:600;cursor:pointer;">Show Controls</button>
+  <button id="toggle-panel-btn" type="button" style="position:absolute;right:18px;top:10px;z-index:210;background:#23272f;color:#6cf6ff;border:none;border-radius:6px;padding:0.3em 1em;font-weight:600;cursor:pointer;">Show Controls</button>
+  <button id="hide-panel-btn" type="button" style="display:none;position:absolute;right:18px;top:10px;z-index:210;background:#23272f;color:#6cf6ff;border:none;border-radius:6px;padding:0.3em 1em;font-weight:600;cursor:pointer;">Hide Controls</button>
+  <div class="control-panel collapsed" id="control-panel">
       <div class="control-row">
         <button id="add-leaf-btn" type="button">Add Leaf</button>
         <button id="add-spawner-btn" type="button">Add Spawner</button>
@@ -78,38 +79,72 @@
     var resetBtn = document.getElementById('reset-btn');
     var controlForm = document.getElementById('control-form');
     var panel = document.getElementById('control-panel');
-    var toggleBtn = document.getElementById('toggle-panel-btn');
+  var toggleBtn = document.getElementById('toggle-panel-btn');
+  var hideBtn = document.getElementById('hide-panel-btn');
     var gameArea = document.getElementById('game-area-container');
     if (resetBtn && controlForm) {
-      resetBtn.addEventListener('click', function () {
+      function resetHandler(e) {
+        if (e.type === 'touchend') e.preventDefault();
         controlForm.reset();
         window.location.reload();
+      }
+      resetBtn.addEventListener('click', resetHandler);
+      resetBtn.addEventListener('touchend', resetHandler);
+    }
+    // Add Leaf and Add Spawner touch support
+    var addLeafBtn = document.getElementById('add-leaf-btn');
+    var addSpawnerBtn = document.getElementById('add-spawner-btn');
+    if (addLeafBtn) {
+      var click = addLeafBtn.onclick;
+      addLeafBtn.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        addLeafBtn.click();
       });
     }
-    if (toggleBtn && panel && gameArea) {
-      toggleBtn.addEventListener('click', function () {
-        var collapsed = panel.classList.toggle('collapsed');
-        if (panel.classList.contains('collapsed')) {
-          toggleBtn.textContent = 'Show Controls';
-          panel.style.height = '38px';
-          panel.style.overflow = 'hidden';
-          panel.style.minHeight = '0';
-          panel.style.paddingBottom = '0';
-          // Expand canvas to fill more space
-          gameArea.style.height = 'calc(100vh - 20px)';
-        } else {
-          toggleBtn.textContent = 'Hide Controls';
-          panel.style.height = '';
-          panel.style.overflow = '';
-          panel.style.minHeight = '';
-          panel.style.paddingBottom = '';
-          gameArea.style.height = '';
-        }
-        // If using p5.js, trigger a resize event
-        if (window.dispatchEvent) {
-          window.dispatchEvent(new Event('resize'));
-        }
+    if (addSpawnerBtn) {
+      var click = addSpawnerBtn.onclick;
+      addSpawnerBtn.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        addSpawnerBtn.click();
       });
+    }
+    if (toggleBtn && hideBtn && panel && gameArea) {
+      function showPanelHandler(e) {
+        if (e.type === 'touchend') e.preventDefault();
+        panel.classList.remove('collapsed');
+        toggleBtn.style.display = 'none';
+        hideBtn.style.display = '';
+        panel.style.height = '';
+        panel.style.overflow = '';
+        panel.style.minHeight = '';
+        panel.style.paddingBottom = '';
+        gameArea.style.height = '';
+        if (window.dispatchEvent) window.dispatchEvent(new Event('resize'));
+      }
+      function hidePanelHandler(e) {
+        if (e.type === 'touchend') e.preventDefault();
+        panel.classList.add('collapsed');
+        toggleBtn.style.display = '';
+        hideBtn.style.display = 'none';
+        panel.style.height = '38px';
+        panel.style.overflow = 'hidden';
+        panel.style.minHeight = '0';
+        panel.style.paddingBottom = '0';
+        gameArea.style.height = 'calc(100vh - 20px)';
+        if (window.dispatchEvent) window.dispatchEvent(new Event('resize'));
+      }
+      toggleBtn.addEventListener('click', showPanelHandler);
+      toggleBtn.addEventListener('touchend', showPanelHandler);
+      hideBtn.addEventListener('click', hidePanelHandler);
+      hideBtn.addEventListener('touchend', hidePanelHandler);
+      // On load, ensure correct button is shown
+      if (panel.classList.contains('collapsed')) {
+        toggleBtn.style.display = '';
+        hideBtn.style.display = 'none';
+      } else {
+        toggleBtn.style.display = 'none';
+        hideBtn.style.display = '';
+      }
     }
   });
 </script>

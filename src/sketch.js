@@ -432,15 +432,25 @@ export const sketch = (p) => {
         droplets = droplets.filter(d => d.x > -20 && d.x < WIDTH + 20 && d.y < HEIGHT + 20);
     };
 
-    p.mousePressed = () => {
+    // Helper to get pointer coordinates (mouse or touch)
+    function getPointer(p) {
+        if (p.touches && p.touches.length > 0) {
+            return { x: p.touches[0].x, y: p.touches[0].y };
+        }
+        return { x: p.mouseX, y: p.mouseY };
+    }
+
+    // Unified pointerPressed handler
+    function pointerPressed(p) {
+        const { x, y } = getPointer(p);
         // Handle close button for instructions panel
         if (showInstructions) {
             // Match close button position to draw loop
             const panelX = 16, panelW = 420, textY = 16 + 12, lineHeight = 24;
             const closeBtnCX = panelX + panelW - 18;
             const closeBtnCY = textY + lineHeight / 2;
-            const dx = p.mouseX - closeBtnCX;
-            const dy = p.mouseY - closeBtnCY;
+            const dx = x - closeBtnCX;
+            const dy = y - closeBtnCY;
             // Use a slightly larger hitbox for the '×'
             if (dx * dx + dy * dy <= 14 * 14) {
                 showInstructions = false;
@@ -458,15 +468,15 @@ export const sketch = (p) => {
         for (let s = 0; s < spawners.length; s++) {
             const spawner = spawners[s];
             // Transform mouse to spawner local space
-            const dx = p.mouseX - spawner.x;
-            const dy = p.mouseY - spawner.y;
+            const dx = x - spawner.x;
+            const dy = y - spawner.y;
             const localX = dx * Math.cos(-spawner.angle) - dy * Math.sin(-spawner.angle);
             const localY = dx * Math.sin(-spawner.angle) + dy * Math.cos(-spawner.angle);
             // Move handle (center)
             if (Math.sqrt(localX * localX + localY * localY) < 20) {
                 dragMode = 'spawner-move';
-                dragOffset.x = p.mouseX - spawner.x;
-                dragOffset.y = p.mouseY - spawner.y;
+                dragOffset.x = x - spawner.x;
+                dragOffset.y = y - spawner.y;
                 dragOffset.spawnerIndex = s;
                 selectedSpawner = s;
                 return;
@@ -474,7 +484,7 @@ export const sketch = (p) => {
             // Angle handle (arrow)
             if (Math.abs(localY) < 12 && localX > 28 && localX < 52) {
                 dragMode = 'spawner-angle';
-                dragOffset.angle = Math.atan2(p.mouseY - spawner.y, p.mouseX - spawner.x) - spawner.angle;
+                dragOffset.angle = Math.atan2(y - spawner.y, x - spawner.x) - spawner.angle;
                 dragOffset.spawnerIndex = s;
                 selectedSpawner = s;
                 return;
@@ -499,13 +509,13 @@ export const sketch = (p) => {
         }
         for (let i = 0; i < LEAFS.length; i++) {
             const leaf = LEAFS[i];
-            const local = toLeafLocal(leaf, p.mouseX, p.mouseY);
+            const local = toLeafLocal(leaf, x, y);
             // Move handle (center)
             if (dist(local.x, local.y, 0, 0) < 16) {
                 draggingLeaf = i;
                 dragMode = 'move';
-                dragOffset.x = p.mouseX - leaf.x;
-                dragOffset.y = p.mouseY - leaf.y;
+                dragOffset.x = x - leaf.x;
+                dragOffset.y = y - leaf.y;
                 if (leaf.dancing) selectedLeaf = i;
                 return;
             }
@@ -516,8 +526,8 @@ export const sketch = (p) => {
                 // Store offset from mouse to end point
                 const endX = leaf.x + Math.cos(leaf.angle) * (leaf.length / 2);
                 const endY = leaf.y + Math.sin(leaf.angle) * (leaf.length / 2);
-                dragOffset.dx = endX - p.mouseX;
-                dragOffset.dy = endY - p.mouseY;
+                dragOffset.dx = endX - x;
+                dragOffset.dy = endY - y;
                 return;
             }
             // Move start point (left handle)
@@ -527,26 +537,35 @@ export const sketch = (p) => {
                 // Store offset from mouse to start point
                 const startX = leaf.x - Math.cos(leaf.angle) * (leaf.length / 2);
                 const startY = leaf.y - Math.sin(leaf.angle) * (leaf.length / 2);
-                dragOffset.dx = startX - p.mouseX;
-                dragOffset.dy = startY - p.mouseY;
+                dragOffset.dx = startX - x;
+                dragOffset.dy = startY - y;
                 return;
             }
         }
         // Otherwise, launch droplet
-        if (p.mouseY > 0 && p.mouseY < HEIGHT) {
+        if (y > 0 && y < HEIGHT) {
             launching = true;
-            launchStart = { x: p.mouseX, y: p.mouseY };
+            launchStart = { x, y };
         }
+    }
+
+    p.mousePressed = () => pointerPressed(p);
+    p.touchStarted = (e) => {
+        if (e.cancelable) e.preventDefault();
+        pointerPressed(p);
+        return false;
     };
 
-    p.mouseReleased = () => {
+    // Unified pointerReleased handler
+    function pointerReleased(p) {
         draggingLeaf = null;
         if (dragMode && dragMode.startsWith('spawner')) dragMode = null;
         else dragMode = null;
         // Only launch droplet if not dragging a leaf or spawner
+        const { x, y } = getPointer(p);
         if (launching && launchStart && !dragMode) {
-            const dx = p.mouseX - launchStart.x;
-            const dy = p.mouseY - launchStart.y;
+            const dx = x - launchStart.x;
+            const dy = y - launchStart.y;
             droplets.push({
                 x: launchStart.x,
                 y: launchStart.y,
@@ -556,19 +575,27 @@ export const sketch = (p) => {
         }
         launching = false;
         launchStart = null;
+    }
+    p.mouseReleased = () => pointerReleased(p);
+    p.touchEnded = (e) => {
+        if (e.cancelable) e.preventDefault();
+        pointerReleased(p);
+        return false;
     };
-    p.mouseDragged = () => {
+    // Unified pointerDragged handler
+    function pointerDragged(p) {
+        const { x, y } = getPointer(p);
         if (draggingLeaf !== null) {
             const leaf = LEAFS[draggingLeaf];
             if (dragMode === 'move') {
-                leaf.x = p.mouseX - dragOffset.x;
-                leaf.y = p.mouseY - dragOffset.y;
+                leaf.x = x - dragOffset.x;
+                leaf.y = y - dragOffset.y;
             } else if (dragMode === 'move-end') {
                 // Move the end point, update angle and length
                 const startX = leaf.x - Math.cos(leaf.angle) * (leaf.length / 2);
                 const startY = leaf.y - Math.sin(leaf.angle) * (leaf.length / 2);
-                const newEndX = p.mouseX + dragOffset.dx;
-                const newEndY = p.mouseY + dragOffset.dy;
+                const newEndX = x + dragOffset.dx;
+                const newEndY = y + dragOffset.dy;
                 const dx = newEndX - startX;
                 const dy = newEndY - startY;
                 leaf.length = Math.max(40, Math.sqrt(dx * dx + dy * dy));
@@ -580,8 +607,8 @@ export const sketch = (p) => {
                 // Move the start point, update angle and length
                 const endX = leaf.x + Math.cos(leaf.angle) * (leaf.length / 2);
                 const endY = leaf.y + Math.sin(leaf.angle) * (leaf.length / 2);
-                const newStartX = p.mouseX + dragOffset.dx;
-                const newStartY = p.mouseY + dragOffset.dy;
+                const newStartX = x + dragOffset.dx;
+                const newStartY = y + dragOffset.dy;
                 const dx = endX - newStartX;
                 const dy = endY - newStartY;
                 leaf.length = Math.max(40, Math.sqrt(dx * dx + dy * dy));
@@ -595,19 +622,25 @@ export const sketch = (p) => {
             if (s !== undefined && spawners[s]) {
                 const spawner = spawners[s];
                 if (dragMode === 'spawner-move') {
-                    spawner.x = p.mouseX - dragOffset.x;
-                    spawner.y = p.mouseY - dragOffset.y;
+                    spawner.x = x - dragOffset.x;
+                    spawner.y = y - dragOffset.y;
                 } else if (dragMode === 'spawner-angle') {
-                    spawner.angle = Math.atan2(p.mouseY - spawner.y, p.mouseX - spawner.x) - dragOffset.angle;
+                    spawner.angle = Math.atan2(y - spawner.y, x - spawner.x) - dragOffset.angle;
                 } else if (dragMode === 'spawner-velocity') {
-                    // Project mouse position onto spawner's axis
-                    const dx = p.mouseX - spawner.x;
-                    const dy = p.mouseY - spawner.y;
+                    // Project pointer position onto spawner's axis
+                    const dx = x - spawner.x;
+                    const dy = y - spawner.y;
                     const localX = dx * Math.cos(-spawner.angle) - dy * Math.sin(-spawner.angle);
                     spawner.velocity = Math.max(2, Math.min(30, (localX - 40) / 3));
                 }
             }
         }
+    }
+    p.mouseDragged = () => pointerDragged(p);
+    p.touchMoved = (e) => {
+        if (e.cancelable) e.preventDefault();
+        pointerDragged(p);
+        return false;
     };
     function toLeafLocal(leaf, x, y) {
         // Transform (x, y) to leaf's local space
