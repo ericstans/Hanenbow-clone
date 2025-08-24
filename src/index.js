@@ -1,3 +1,4 @@
+import '../public/styles.css';
 // Sound velocity mode: 'speed', 'fixed'
 window.velocityMode = 'speed';
 if (typeof window !== 'undefined') {
