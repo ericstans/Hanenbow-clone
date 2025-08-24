@@ -61,6 +61,8 @@ import p5 from "p5";
 
 
 const sketch = (p) => {
+    // Show/hide instructions panel
+    let showInstructions = true;
     // --- DANCING LEAF UI OVERLAY ---
     let selectedLeaf = null;
     if (typeof window !== 'undefined') {
@@ -152,8 +154,8 @@ const sketch = (p) => {
         });
     }
     // Canvas and game constants
-    let WIDTH = window.innerWidth;
-    let HEIGHT = getAvailableHeight();
+    let WIDTH = 0;
+    let HEIGHT = 0;
 
     // Add Leaf button logic
     if (typeof window !== 'undefined') {
@@ -177,16 +179,13 @@ const sketch = (p) => {
     }
 
     function getAvailableHeight() {
-        // Subtract the height of controls/header from window.innerHeight
-        const header = document.querySelector('h1');
-        const panel = document.querySelector('.control-panel');
-        const spawnerUI = document.getElementById('spawner-ui-container');
-        let used = 0;
-        if (header) used += header.offsetHeight;
-        if (panel) used += panel.offsetHeight;
-        if (spawnerUI) used += spawnerUI.offsetHeight;
-        // Add a little margin
-        return Math.max(200, window.innerHeight - used - 32);
+        // Use the height of the #game-area-container for the canvas
+        const container = document.getElementById('game-area-container');
+        if (container) {
+            const rect = container.getBoundingClientRect();
+            return Math.max(100, rect.height);
+        }
+        return Math.max(100, window.innerHeight);
     }
     // Five preset colors mapped to oscillator types (last is noise)
     const LEAF_COLORS = [
@@ -256,7 +255,7 @@ const sketch = (p) => {
                     const slider = document.createElement('input');
                     slider.type = 'range';
                     slider.min = '200';
-                    slider.max = '3000';
+                    slider.max = '10000';
                     slider.step = '10';
                     slider.value = spawner.spawnRate || 1200;
                     slider.style.width = '60px';
@@ -337,27 +336,67 @@ const sketch = (p) => {
         LEAFS = REF_LEAFS.map(scaleLeaf);
     }
     p.setup = () => {
-        WIDTH = window.innerWidth;
-        HEIGHT = getAvailableHeight();
+        const container = document.getElementById('game-area-container');
+        if (container) {
+            WIDTH = container.clientWidth;
+            HEIGHT = container.clientHeight;
+        } else {
+            WIDTH = window.innerWidth;
+            HEIGHT = window.innerHeight;
+        }
         p.createCanvas(WIDTH, HEIGHT);
         p.background(34);
         updateLeafsToCanvas();
     };
     p.windowResized = () => {
-        WIDTH = window.innerWidth;
-        HEIGHT = getAvailableHeight();
+        const container = document.getElementById('game-area-container');
+        if (container) {
+            WIDTH = container.clientWidth;
+            HEIGHT = container.clientHeight;
+        } else {
+            WIDTH = window.innerWidth;
+            HEIGHT = window.innerHeight;
+        }
         p.resizeCanvas(WIDTH, HEIGHT);
         updateLeafsToCanvas();
     };
 
-    p.windowResized = () => {
-        WIDTH = window.innerWidth;
-        HEIGHT = window.innerHeight;
-        p.resizeCanvas(WIDTH, HEIGHT);
-    };
-
     p.draw = () => {
         p.background(34);
+        // Draw instructions panel if visible
+        if (showInstructions) {
+            p.push();
+            p.textSize(18);
+            const panelX = 16, panelY = 16, panelW = 420, panelH = 128;
+            const textX = panelX + 12, textY = panelY + 12;
+            // Draw panel background
+            p.fill(0, 0, 0, 120);
+            p.noStroke();
+            p.rect(panelX, panelY, panelW, panelH, 12);
+            // Draw instructions text
+            p.textAlign(p.LEFT, p.TOP);
+            p.fill(255);
+            const lines = [
+                "Click to launch a ball.",
+                "Double click a leaf to change its sound.",
+                "Add spawners to launch balls automatically.",
+                "Shift+double click a leaf to make it dance.",
+                "Select a dancing leaf for options."
+            ];
+            let lineHeight = 24;
+            for (let i = 0; i < lines.length; ++i) {
+                p.text(lines[i], textX, textY + i * lineHeight);
+            }
+            // Draw close button
+            const closeBtnCX = panelX + panelW - 18;
+            const closeBtnCY = textY + lineHeight / 2;
+            p.noStroke();
+            p.fill(220, 60, 60);
+            p.textAlign(p.CENTER, p.CENTER);
+            p.textSize(22);
+            p.text('×', closeBtnCX, closeBtnCY);
+            p.pop();
+        }
         // Draw all spawners
         for (const spawner of spawners) {
             p.push();
@@ -427,7 +466,12 @@ const sketch = (p) => {
                 }
             };
 
-            p.ellipse(0, 0, leaf.length, 20);
+            // Make leaves thinner as viewport gets smaller
+            let leafThickness = 20;
+            if (WIDTH < 700) leafThickness = 16;
+            if (WIDTH < 500) leafThickness = 12;
+            if (WIDTH < 350) leafThickness = 8;
+            p.ellipse(0, 0, leaf.length, leafThickness);
             // Draw handles if dragging or hovered
             if (draggingLeaf === i || isMouseOverLeaf(leaf)) {
                 // Move handle (center)
@@ -478,6 +522,20 @@ const sketch = (p) => {
     };
 
     p.mousePressed = () => {
+        // Handle close button for instructions panel
+        if (showInstructions) {
+            // Match close button position to draw loop
+            const panelX = 16, panelW = 420, textY = 16 + 12, lineHeight = 24;
+            const closeBtnCX = panelX + panelW - 18;
+            const closeBtnCY = textY + lineHeight / 2;
+            const dx = p.mouseX - closeBtnCX;
+            const dy = p.mouseY - closeBtnCY;
+            // Use a slightly larger hitbox for the '×'
+            if (dx * dx + dy * dy <= 14 * 14) {
+                showInstructions = false;
+                return;
+            }
+        }
         // Spawner handles for all spawners
         // Prevent deselection if clicking inside spawner overlay
         let spawnerOverlay = document.getElementById('spawner-ui-overlay');

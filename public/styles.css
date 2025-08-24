@@ -1,0 +1,212 @@
+html, body { height: 100%; margin: 0; padding: 0; }
+body {
+  background: #222;
+  color: #fff;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+#game-area-container {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: stretch;
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+#game-area-container canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100vw;
+  max-height: 100vh;
+  background: #222;
+}
+.control-panel {
+  background: linear-gradient(135deg, #23272f 60%, #1a1d22 100%);
+  border-radius: 18px;
+  margin: 0.5em auto 0.5em auto;
+  padding: 1.5em 2.5em 1.2em 2.5em;
+  max-width: 950px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2em;
+  align-items: stretch;
+  border: 1.5px solid #2a2d33;
+}
+.control-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2em;
+  align-items: center;
+  justify-content: center;
+}
+.control-panel label {
+  font-size: 1.08em;
+  margin-right: 0.7em;
+  color: #e6e6fa;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.control-panel select, .control-panel input[type=range] {
+  margin-right: 1.2em;
+  border-radius: 6px;
+  border: none;
+  padding: 0.32em 0.8em;
+  font-size: 1.05em;
+  background: #2a2d33;
+  color: #fff;
+  outline: none;
+  box-shadow: 0 1.5px 4px #0003;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.control-panel select:focus, .control-panel input[type=range]:focus {
+  background: #353a42;
+  box-shadow: 0 0 0 2px #6cf6ff55;
+}
+.control-panel input[type=range] {
+  width: 110px;
+  vertical-align: middle;
+  accent-color: #6cf6ff;
+  background: transparent;
+}
+.control-panel input[type=range]::-webkit-slider-thumb {
+  background: #6cf6ff;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  box-shadow: 0 0 4px #6cf6ff88;
+  border: 2px solid #23272f;
+}
+.control-panel input[type=range]::-moz-range-thumb {
+  background: #6cf6ff;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  box-shadow: 0 0 4px #6cf6ff88;
+  border: 2px solid #23272f;
+}
+.control-panel input[type=range]::-ms-thumb {
+  background: #6cf6ff;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  box-shadow: 0 0 4px #6cf6ff88;
+  border: 2px solid #23272f;
+}
+.control-panel input[type=range]::-webkit-slider-runnable-track {
+  background: #353a42;
+  border-radius: 4px;
+  height: 6px;
+}
+.control-panel input[type=range]::-ms-fill-lower {
+  background: #353a42;
+}
+.control-panel input[type=range]::-ms-fill-upper {
+  background: #353a42;
+}
+.control-panel input[type=range]:focus::-webkit-slider-runnable-track {
+  background: #6cf6ff44;
+}
+.control-panel input[type=range]:focus::-ms-fill-lower {
+  background: #6cf6ff44;
+}
+.control-panel input[type=range]:focus::-ms-fill-upper {
+  background: #6cf6ff44;
+}
+.control-panel input[type=range]::-moz-range-track {
+  background: #353a42;
+  border-radius: 4px;
+  height: 6px;
+}
+.control-panel input[type=range]:focus::-moz-range-track {
+  background: #6cf6ff44;
+}
+.control-panel input[type=range]:focus {
+  outline: none;
+}
+.control-panel input[type=range]::-ms-tooltip {
+  display: none;
+}
+input[type=range]::-webkit-outer-spin-button,
+input[type=range]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=range] {
+  -moz-appearance: none;
+}
+.grouped-labels {
+  gap: 2.5em;
+  justify-content: flex-start;
+}
+.control-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 160px;
+  margin-bottom: 0.2em;
+}
+.control-group label {
+  margin-bottom: 0.2em;
+  font-size: 1em;
+  color: #e6e6fa;
+  font-weight: 600;
+}
+.control-group select, .control-group input[type=range] {
+  margin-right: 0;
+  width: 100%;
+}
+.control-group input[type=range] {
+  width: 140px;
+  min-width: 0;
+  max-width: 100%;
+}
+#game-area-container {
+  padding: 0.7em 1em 0.7em 1em;
+}
+#add-leaf-btn, #add-spawner-btn {
+  font-size: 1em;
+  padding: 0.4em 1.2em;
+  border-radius: 6px;
+  background: #6cf6ff;
+  color: #23272f;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 1px 4px #0003;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#reset-btn {
+  font-size: 1em;
+  padding: 0.4em 1.2em;
+  border-radius: 6px;
+  background: #ff6c6c;
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 1px 4px #0003;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#spawner-ui-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+#leaf-ui-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  z-index: 11;
+}
