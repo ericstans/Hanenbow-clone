@@ -63,16 +63,12 @@ if (typeof window !== 'undefined') {
     window.addEventListener('DOMContentLoaded', () => {
         const select = document.getElementById('pitch-mode');
         const qselect = document.getElementById('quantize-mode');
-        function handleSelectInput(sel, callback) {
-            if (!sel) return;
-            sel.addEventListener('change', callback);
-            sel.addEventListener('touchend', e => {
-                e.stopPropagation();
-                callback();
-            }, { passive: true });
+        if (select) {
+            select.addEventListener('change', () => { window.pitchMode = select.value; });
         }
-        handleSelectInput(select, () => { window.pitchMode = select.value; });
-        handleSelectInput(qselect, () => { window.quantizeMode = qselect.value; });
+        if (qselect) {
+            qselect.addEventListener('change', () => { window.quantizeMode = qselect.value; });
+        }
     });
 }
 // Sound pitch mode: 'length', 'angle', 'speed', 'bounce'

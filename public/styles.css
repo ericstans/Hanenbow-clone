@@ -75,6 +75,10 @@ body {
   max-height: 100vh;
   background: #222;
 }
+/* Ensure controls are always interactive */
+.control-panel, .control-panel * {
+  pointer-events: auto !important;
+}
 .control-panel {
   background: linear-gradient(135deg, #23272f 60%, #1a1d22 100%);
   border-radius: 18px 18px 0 0;
